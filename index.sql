@@ -1,89 +1,72 @@
--- PART I
--- 1- Créez 2 tables : Client et Profil client. Ils ont une relation One to One.
-
--- table Customer 
+--PART 1
+--Create the Customer and Customer profile tables:
 CREATE TABLE Customer (
   id SERIAL PRIMARY KEY,
-  first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(50) NOT NULL
 );
 
--- Table Customer profile 
-CREATE TABLE Customer_profile (
+CREATE TABLE Customer_Profile (
   id SERIAL PRIMARY KEY,
   isLoggedIn BOOLEAN DEFAULT false,
   customer_id INTEGER REFERENCES Customer(id)
 );
 
--- 2- Insérez ces clients (Jean, biche), (Jérôme, Lalu), (Léa, Rive)
-INSERT INTO Customer (first_name, last_name) VALUES
-('John', 'Doe'),
-('Jerome', 'Lalu'),
-('Lea', 'Rive');
+--Insert the customers:
+INSERT INTO Customer (first_name, last_name) VALUES ('John', 'Doe');
+INSERT INTO Customer (first_name, last_name) VALUES ('Jerome', 'Lalu');
+INSERT INTO Customer (first_name, last_name) VALUES ('Lea', 'Rive');
 
--- 3- Insérez ces profils clients, utilisez des sous-requêtes
-INSERT INTO Customer_profile (isLoggedIn, customer_id) VALUES
-(true, (SELECT id FROM Customer WHERE first_name = 'John')),
-(false, (SELECT id FROM Customer WHERE first_name = 'Jerome')));
+--Insert the customer profiles:
+INSERT INTO Customer_Profile (isLoggedIn, customer_id)
+VALUES (true, (SELECT id FROM Customer WHERE first_name = 'John' AND last_name = 'Doe'));
+INSERT INTO Customer_Profile (isLoggedIn, customer_id)
+VALUES (false, (SELECT id FROM Customer WHERE first_name = 'Jerome' AND last_name = 'Lalu'));
 
--- 4- Utilisez les types de jointures pertinents pour afficher 
--- Le prénom des clients connectés
-SELECT c.first_name 
+
+-- The first_name of the LoggedIn customers
+SELECT c.first_name
 FROM Customer c
-JOIN Customer_profile cp ON c.id = cp.customer_id 
+JOIN Customer_Profile cp ON c.id = cp.customer_id
 WHERE cp.isLoggedIn = true;
 
--- Toutes les colonnes first_name et isLoggedIn des clients - même les clients qui n'ont pas de profil.
-SELECT c.first_name, cp.isLoggedIn 
+-- All the customers first_name and isLoggedIn columns - even the customers those who don’t have a profile.
+SELECT c.first_name, COALESCE(cp.isLoggedIn, false) AS isLoggedIn
 FROM Customer c
-LEFT JOIN Customer_profile cp ON c.id = cp.customer_id;
+LEFT JOIN Customer_Profile cp ON c.id = cp.customer_id;
 
--- Le nombre de clients non connectés
-SELECT COUNT(*) 
+-- The number of customers that are not LoggedIn
+SELECT COUNT(*)
 FROM Customer c
-LEFT JOIN Customer_profile cp ON c.id = cp.customer_id
-WHERE cp.id IS NULL OR cp.isLoggedIn = false;
+LEFT JOIN Customer_Profile cp ON c.id = cp.customer_id
+WHERE cp.isLoggedIn = false OR cp.isLoggedIn IS NULL;
 
+--PART 2
 
---PART II
--- 1- Créez une table nommée Book , avec les colonnes : book_id SERIAL PRIMARY KEY, title NOT NULL,author NOT NULL
+--Create the Book, Student tables:
 CREATE TABLE Book (
   book_id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  author TEXT NOT NULL
+  title VARCHAR(100) NOT NULL,
+  author VARCHAR(100) NOT NULL
 );
 
--- 2- Insérez ces livres :
---Alice au pays des merveilles, Lewis Carroll
---Harry Potter, JK Rowling
---Pour tuer un oiseau moqueur, Harper Lee
-INSERT INTO Book (title, author) VALUES
-('Alice In Wonderland', 'Lewis Carroll'),
-('Harry Potter', 'J.K Rowling'),
-('To kill a mockingbird', 'Harper Lee');
-
--- 3- Créez une table nommée Student , avec les colonnes : student_id SERIAL PRIMARY KEY, name NOT NULL UNIQUE, age. Assurez-vous que l'âge n'est jamais supérieur à 15 ans (Recherchez une méthode SQL) ;
 CREATE TABLE Student (
   student_id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  age INTEGER CHECK (age <= 15)
+  name VARCHAR(50) NOT NULL UNIQUE,
+  age INTEGER NOT NULL CHECK (age <= 15)
 );
+--Insert the books:
+INSERT INTO Book (title, author) VALUES ('Alice In Wonderland', 'Lewis Carroll');
+INSERT INTO Book (title, author) VALUES ('Harry Potter', 'J.K Rowling');
+INSERT INTO Book (title, author) VALUES ('To kill a mockingbird', 'Harper Lee');
 
--- 4- Insérez ces étudiants :
--- Jean, 12 ans
--- Léra, 11 ans
--- Patrick, 10 ans
--- Bob, 14 ans
-INSERT INTO Student (name, age) VALUES
-('John', 12),
-('Lera', 11),
-('Patrick', 10),
-('Bob', 14);
+--Insert the students:
+INSERT INTO Student (name, age) VALUES ('John', 12);
+INSERT INTO Student (name, age) VALUES ('Lera', 11);
+INSERT INTO Student (name, age) VALUES ('Patrick', 10);
+INSERT INTO Student (name, age) VALUES ('Bob', 14);
 
--- 5- Créez une table nommée Library , avec les colonnes :
--- book_fk_id ON DELETE CASCADE ON UPDATE CASCADE
--- student_id ON DELETE CASCADE ON UPDATE CASCADE
--- borrowed_date
+-- Create the library table
 CREATE TABLE Library (
   book_fk_id INTEGER REFERENCES Book(book_id) ON DELETE CASCADE ON UPDATE CASCADE,
   student_fk_id INTEGER REFERENCES Student(student_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -91,15 +74,57 @@ CREATE TABLE Library (
   PRIMARY KEY (book_fk_id, student_fk_id)
 );
 
--- 6- Ajoutez 4 enregistrements dans la table de jonction, utilisez des sous-requêtes.
-INSERT INTO Library (book_fk_id, student_fk_id, borrowed_date) VALUES
-((SELECT book_id FROM Book WHERE title = 'Alice In Wonderland'), (SELECT student_id FROM Student WHERE name = 'John'), '2022-02-15'),
-((SELECT book_id FROM Book WHERE title = 'To kill a mockingbird'), (SELECT student_id FROM Student WHERE name = 'Bob'), '2021-03-03'),
-((SELECT book_id FROM Book WHERE title = 'Alice In Wonderland'), (SELECT student_id FROM Student WHERE name = 'Lera'), '2021-05-23'),
-((SELECT book_id FROM Book WHERE title = 'Harry Potter'), (SELECT student_id FROM Student WHERE name = 'Bob'), '2021-08-12');
+-- Insert the record for John and Alice in Wonderland
+INSERT INTO Library (book_fk_id, student_id, borrowed_date)
+VALUES (
+  (SELECT book_id FROM Book WHERE title = 'Alice In Wonderland'),
+  (SELECT student_id FROM Student WHERE name = 'John'),
+  '2022-02-15'
+);
 
--- 7- Afficher les données
+-- Insert the record for Bob and To kill a mockingbird
+INSERT INTO Library (book_fk_id, student_id, borrowed_date)
+VALUES (
+  (SELECT book_id FROM Book WHERE title = 'To kill a mockingbird'),
+  (SELECT student_id FROM Student WHERE name = 'Bob'),
+  '2021-03-03'
+);
+
+-- Insert the record for Lera and Alice in Wonderland
+INSERT INTO Library (book_fk_id, student_id, borrowed_date)
+VALUES (
+  (SELECT book_id FROM Book WHERE title = 'Alice In Wonderland'),
+  (SELECT student_id FROM Student WHERE name = 'Lera'),
+  '2021-05-23'
+);
+
+-- Insert the record for Bob and Harry Potter
+INSERT INTO Library (book_fk_id, student_id, borrowed_date)
+VALUES (
+  (SELECT book_id FROM Book WHERE title = 'Harry Potter'),
+  (SELECT student_id FROM Student WHERE name = 'Bob'),
+  '2021-08-12'
+);
+
+-- Select all columns from the junction table
 SELECT * FROM Library;
 
-SELECT s.name, b.title 
-FROM Student;
+-- Select the name of the student and the title of the borrowed books
+SELECT s.name AS student_name, b.title AS book_title
+FROM Library l
+JOIN Student s ON l.student_id = s.student_id
+JOIN Book b ON l.book_fk_id = b.book_id;
+
+-- Select the average age of the children that borrowed the book Alice in Wonderland
+SELECT AVG(s.age) AS avg_age
+FROM Library l
+JOIN Student s ON l.student_id = s.student_id
+JOIN Book b ON l.book_fk_id = b.book_id
+WHERE b.title = 'Alice In Wonderland';
+
+-- To delete a student from the Student table, you can use the following SQL statement
+DELETE FROM Student WHERE name = 'John';
+
+/*If we delete a student from the Student table, any records in the Library table that reference that student via the foreign key constraint will also be deleted due to the `ON DELETE CASCADE` option on the foreign key constraints in the Library table. So, any records in the Library table for the student named John would be deleted.*/
+
+
