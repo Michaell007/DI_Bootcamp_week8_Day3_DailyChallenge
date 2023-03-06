@@ -13,7 +13,7 @@ CREATE TABLE Customer_Profile (
 );
 
 --Insert the customers:
-INSERT INTO Customer (first_name, last_name) VALUES ('John', 'Doe');
+INSERT INTO Customer (first_name, last_name) VALUES ('John', 'Doe'); 
 INSERT INTO Customer (first_name, last_name) VALUES ('Jerome', 'Lalu');
 INSERT INTO Customer (first_name, last_name) VALUES ('Lea', 'Rive');
 
