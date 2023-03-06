@@ -1,5 +1,5 @@
 --PART 1
---Create the Customer and Customer profile tables:
+--Create the Customer and Customer profile tables :
 CREATE TABLE Customer (
   id SERIAL PRIMARY KEY,
   first_name VARCHAR(50) NOT NULL,
